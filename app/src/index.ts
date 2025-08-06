@@ -3,7 +3,7 @@ import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
 import { cors } from 'hono/cors'
 import { etag } from 'hono/etag'
-import { App, StatusCodes } from './types'
+import { App, serverError, ServerErrors, StatusCodes } from './types'
 import db from './v1/Database'
 import Cloudflare from './v1/Cloudflare'
 import log from './v1/Log'
@@ -12,6 +12,7 @@ import { router as accountRouter } from './v1/routes/account'
 import { HTTPException } from 'hono/http-exception'
 import { Cron } from './v1/Cron'
 import { trackView } from './v1/routes/middleware'
+import fs from 'fs'
 
 require('dotenv').config()
 
@@ -31,7 +32,16 @@ const app = new Hono()
 app.use('/v1/*', cors()) // CORS for all API routes
 app.route('/v1/file', fileRouter)
 app.route('/v1/account', accountRouter)
-app.get('/v1/ping', () => new Response('ok'))
+app.get('/v1/ping', async () => {
+  try {
+    // Check to make sure the upload location exists and is writeable
+    await fs.promises.access(appInstance.baseFolder, fs.constants.W_OK)
+    return new Response('ok')
+  } catch (e) {
+    console.log(e)
+    return new Response('', { status: serverError(ServerErrors.FILESYSTEM_NOT_WRITABLE) })
+  }
+})
 
 // Add etags for all files
 app.use('*', etag())
@@ -86,7 +96,7 @@ app.all('*', (c) => {
 
 app.onError((error, c) => {
   const err = error as HTTPException
-  const status = typeof err?.status === 'number' ? err.status : 500
+  const status = err.status || 500
   log.event(c, {
     status,
     endpoint: c.req.path

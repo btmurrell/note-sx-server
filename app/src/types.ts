@@ -1,5 +1,5 @@
-import Cloudflare from './v1/Cloudflare';
-import { Log } from './v1/Log';
+import Cloudflare from './v1/Cloudflare'
+import { Log } from './v1/Log'
 import { SQLite } from './v1/Database'
 import { ContentfulStatusCode } from 'hono/dist/types/utils/http-status'
 
@@ -25,7 +25,8 @@ export enum ServerErrors {
   FILE_FAILED_TO_UPLOAD,
   USER_FAILED_TO_SAVE,
   API_KEY_FAILED_TO_SAVE,
-  TURNSTILE_NO_VERIFY
+  TURNSTILE_NO_VERIFY,
+  FILESYSTEM_NOT_WRITABLE
 }
 
 export const StatusCodes: { [key: number]: string } = {
@@ -40,7 +41,7 @@ export const StatusCodes: { [key: number]: string } = {
   461: 'I am currently performing maintenance on the server. Service will return to normal soon.',
   462: 'Invalid API key, you should automatically be redirected to your browser to request a new one', // 462 will automatically get a new key
   463: 'Invalid authentication token'
-};
+}
 
 export function serverError (error: ServerErrors) {
   return (560 + error) as ContentfulStatusCode
